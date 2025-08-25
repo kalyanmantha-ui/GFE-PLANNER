@@ -135,8 +135,8 @@
 
   <script>
     // ====== CONFIG ======
-    const START = new Date('2025-08-25');  // Mon
-    const END   = new Date('2025-12-01');  // Mon (wrap-up)
+    const START = localDate(2025, 8, 25);  // Mon (local date, no TZ drift)
+    const END   = localDate(2025, 12, 1);  // Mon (wrap-up)
 
     const jsTargets = [12,12,11,11,10,10,8,10,10,10,9,9,8,10];
     const uiTargets = [ 4, 4, 4, 4, 5, 5,3, 5, 5, 5,4,5,4,2];
@@ -160,10 +160,23 @@
     };
 
     // ====== UTIL ======
-    const iso = d => d.toISOString().slice(0,10);
-    function addDays(d, n){ const t=new Date(d); t.setDate(t.getDate()+n); return t; }
+    function z2(n){ return String(n).padStart(2,'0'); }
+    function localDate(y,m,d){
+      // Build a local date at NOON to avoid DST/UTC rollover issues
+      return new Date(y, m-1, d, 12, 0, 0, 0);
+    }
+    function iso(d){ return `${d.getFullYear()}-${z2(d.getMonth()+1)}-${z2(d.getDate())}`; }
+    function addDays(d, n){ const t = new Date(d); t.setDate(t.getDate()+n); return t; }
     function rangeByDay(start, end){ const out=[]; for(let d=new Date(start); d<=end; d=addDays(d,1)) out.push(new Date(d)); return out; }
-    function weekIndex(date){ const diff = Math.floor((date-START)/86400000); return Math.min(Math.floor(diff/7), 14); }
+    function daysSinceStart(date){
+      const sUTC = Date.UTC(START.getFullYear(), START.getMonth(), START.getDate());
+      const dUTC = Date.UTC(date.getFullYear(),  date.getMonth(),  date.getDate());
+      return Math.floor((dUTC - sUTC)/86400000);
+    }
+    function weekIndex(date){
+      const days = daysSinceStart(date);
+      return Math.min(Math.floor(days/7), 14);
+    }
 
     // ====== DISTRIBUTION (match earlier plan) ======
     function weekDistribution(jsTarget, uiTarget){
